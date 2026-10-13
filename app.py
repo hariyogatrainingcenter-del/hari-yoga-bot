@@ -1,57 +1,43 @@
-from flask import Flask
+import os
+from flask import Flask, request
+import telebot
+import requests
 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
+
+@bot.message_handler(commands=['start','help'])
+def welcome(m):
+    bot.reply_to(m, "🙏 வணக்கம்! Hari Yoga Bot Ready!\n\n/yoga - Yoga Info\n/contact - Contact")
+
+@bot.message_handler(commands=['yoga'])
+def yoga(m):
+    bot.reply_to(m, "🧘‍♂️ Hari Yoga Training\nDaily Classes Available!")
+
+@bot.message_handler(commands=['contact'])
+def contact(m):
+    bot.reply_to(m, "📞 90000 00000\n📍 Chennai")
+
+@bot.message_handler(func=lambda m: True)
+def echo(m):
+    bot.reply_to(m, f"Neenga: {m.text}")
 
 @app.route('/')
 def home():
-    return """
-    <html>
-    <head>
-        <title>Batthari Hari - Yoga Master</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body { 
-                font-family: Arial; 
-                text-align: center; 
-                background: linear-gradient(to right, #ff9a00, #ff6a00);
-                color: white;
-                padding: 30px;
-            }
-            .card {
-                background: white;
-                color: #333;
-                padding: 30px;
-                border-radius: 20px;
-                max-width: 500px;
-                margin: auto;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { color: #ff6a00; }
-            .btn {
-                background: #ff6a00;
-                color: white;
-                padding: 12px 25px;
-                border: none;
-                border-radius: 25px;
-                font-size: 18px;
-                margin-top: 20px;
-                cursor: pointer;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <h1>🧘 Batthari Hari 👑</h1>
-            <h2>World Yoga Founder</h2>
-            <p>Welcome to My Official Yoga Website!</p>
-            <p>🔥 LIVE Successfully on Render 🔥</p>
-            <p>⚡ Energy Mode: ON ⚡</p>
-            <button class="btn" onclick="alert('Hari Blessing You! 🙏')">Get Blessing</button>
-            <p style="margin-top:20px;">© 2026 Batthari Hari</p>
-        </div>
-    </body>
-    </html>
-    """
+    return "Bot Live!"
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return 'ok', 200
+
+@app.route('/setwebhook')
+def sethook():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url=https://hari-yoga-bot-1.onrender.com/webhook"
+    return requests.get(url).text
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
